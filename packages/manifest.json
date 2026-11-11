@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "macos": {
+    "formulae": [
+      "chezmoi",
+      "git",
+      "git-lfs",
+      "gh",
+      "gnupg",
+      "oh-my-posh",
+      "uv",
+      "ripgrep",
+      "fd",
+      "node@24"
+    ],
+    "casks": [
+      "1password",
+      "1password-cli",
+      "tailscale-app",
+      "visual-studio-code",
+      "wezterm",
+      "font-jetbrains-mono",
+      "font-jetbrains-mono-nerd-font",
+      "herdr-app",
+      "unity-hub",
+      "unity-version-control",
+      "rider",
+      "docker-desktop",
+      "parsec"
+    ],
+    "manual": [
+      {
+        "name": "Xcode",
+        "method": "App Store",
+        "url": "https://apps.apple.com/app/xcode/id497799835"
+      }
+    ]
+  },
+  "windows": {
+    "winget": [
+      "Git.Git",
+      "GitHub.GitLFS",
+      "GitHub.cli",
+      "GnuPG.Gpg4win",
+      "AgileBits.1Password",
+      "AgileBits.1Password.CLI",
+      "Tailscale.Tailscale",
+      "Microsoft.VisualStudioCode",
+      "wez.wezterm.nightly",
+      "JanDeDobbeleer.OhMyPosh",
+      "twpayne.chezmoi",
+      "Microsoft.PowerShell",
+      "Unity.UnityHub",
+      "Codice.PlasticSCM.CloudEdition",
+      "JetBrains.Rider",
+      "Docker.DockerDesktop",
+      "Parsec.Parsec",
+      "OpenJS.NodeJS.LTS",
+      "astral-sh.uv",
+      "BurntSushi.ripgrep.MSVC",
+      "sharkdp.fd",
+      "DEVCOM.JetBrainsMonoNerdFont"
+    ],
+    "manual": [],
+    "originalFontInstaller": "tools/install-fonts.ps1"
+  },
+  "officialInstallers": {
+    "pi": {
+      "darwin": "https://pi.dev/install.sh",
+      "win32": "https://pi.dev/install.ps1"
+    },
+    "herdrWindows": "https://releases.herdr.dev/app/install.ps1"
+  },
+  "piPackages": [
+    "npm:@aefree/pi-safety-rails",
+    "npm:@aefree/pi-themes",
+    "npm:pi-subagents",
+    "npm:pi-web-access"
+  ]
+}

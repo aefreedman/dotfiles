@@ -1,0 +1,81 @@
+{
+  "$schema": "https://aka.ms/winget-packages.schema.2.0.json",
+  "Sources": [
+    {
+      "Packages": [
+        {
+          "PackageIdentifier": "Git.Git"
+        },
+        {
+          "PackageIdentifier": "GitHub.GitLFS"
+        },
+        {
+          "PackageIdentifier": "GitHub.cli"
+        },
+        {
+          "PackageIdentifier": "GnuPG.Gpg4win"
+        },
+        {
+          "PackageIdentifier": "AgileBits.1Password"
+        },
+        {
+          "PackageIdentifier": "AgileBits.1Password.CLI"
+        },
+        {
+          "PackageIdentifier": "Tailscale.Tailscale"
+        },
+        {
+          "PackageIdentifier": "Microsoft.VisualStudioCode"
+        },
+        {
+          "PackageIdentifier": "wez.wezterm.nightly"
+        },
+        {
+          "PackageIdentifier": "JanDeDobbeleer.OhMyPosh"
+        },
+        {
+          "PackageIdentifier": "twpayne.chezmoi"
+        },
+        {
+          "PackageIdentifier": "Microsoft.PowerShell"
+        },
+        {
+          "PackageIdentifier": "Unity.UnityHub"
+        },
+        {
+          "PackageIdentifier": "Codice.PlasticSCM.CloudEdition"
+        },
+        {
+          "PackageIdentifier": "JetBrains.Rider"
+        },
+        {
+          "PackageIdentifier": "Docker.DockerDesktop"
+        },
+        {
+          "PackageIdentifier": "Parsec.Parsec"
+        },
+        {
+          "PackageIdentifier": "OpenJS.NodeJS.LTS"
+        },
+        {
+          "PackageIdentifier": "astral-sh.uv"
+        },
+        {
+          "PackageIdentifier": "BurntSushi.ripgrep.MSVC"
+        },
+        {
+          "PackageIdentifier": "sharkdp.fd"
+        },
+        {
+          "PackageIdentifier": "DEVCOM.JetBrainsMonoNerdFont"
+        }
+      ],
+      "SourceDetails": {
+        "Argument": "https://cdn.winget.microsoft.com/cache",
+        "Identifier": "Microsoft.Winget.Source_8wekyb3d8bbwe",
+        "Name": "winget",
+        "Type": "Microsoft.PreIndexed.Package"
+      }
+    }
+  ]
+}

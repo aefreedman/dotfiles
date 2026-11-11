@@ -1,0 +1,76 @@
+{
+  "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
+  "version": 3,
+  "final_space": true,
+  "blocks": [
+    {
+      "type": "prompt",
+      "alignment": "left",
+      "segments": [
+        {
+          "type": "shell",
+          "style": "powerline",
+          "powerline_symbol": "",
+          "foreground": "#fdf6e3",
+          "background": "#268bd2",
+          "template": "  {{ .Name }} "
+        },
+        {
+          "type": "path",
+          "style": "powerline",
+          "powerline_symbol": "",
+          "foreground": "#002b36",
+          "background": "#2aa198",
+          "properties": {
+            "style": "folder"
+          },
+          "template": "  {{ .Path }} "
+        },
+        {
+          "type": "git",
+          "style": "powerline",
+          "powerline_symbol": "",
+          "foreground": "#002b36",
+          "background": "#859900",
+          "properties": {
+            "branch_icon": " "
+          },
+          "template": " {{ .HEAD }}{{ if .Working.Changed }}  {{ .Working.String }}{{ end }} "
+        },
+        {
+          "type": "plastic",
+          "style": "powerline",
+          "powerline_symbol": "",
+          "foreground": "#fdf6e3",
+          "background": "#6c71c4",
+          "properties": {
+            "branch_icon": " "
+          },
+          "template": " {{ .Selector }}{{ if .Status.Changed }}  {{ .Status.String }}{{ end }} "
+        },
+        {
+          "type": "unity",
+          "style": "powerline",
+          "powerline_symbol": "",
+          "foreground": "#002b36",
+          "background": "#b58900",
+          "properties": {
+            "http_timeout": 2000
+          },
+          "template": "  {{ .UnityVersion }}{{ if .CSharpVersion }} C# {{ .CSharpVersion }}{{ end }} "
+        },
+        {
+          "type": "status",
+          "style": "powerline",
+          "powerline_symbol": "",
+          "foreground": "#fdf6e3",
+          "background": "#dc322f",
+          "properties": {
+            "always_enabled": false
+          },
+          "template": "  {{ .Code }} "
+        }
+      ]
+    }
+  ]
+}

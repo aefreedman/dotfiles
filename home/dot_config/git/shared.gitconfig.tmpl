@@ -1,0 +1,19 @@
+# Identity, keys, and credential helpers stay in the user's Git config.
+[init]
+    defaultBranch = main
+[gpg]
+    format = openpgp
+[commit]
+    gpgSign = true
+[tag]
+    gpgSign = true
+[filter "lfs"]
+    clean = git-lfs clean -- %f
+    smudge = git-lfs smudge -- %f
+    process = git-lfs filter-process
+    required = true
+{{ if eq .chezmoi.os "windows" }}
+[core]
+    autocrlf = true
+    longpaths = true
+{{ end }}

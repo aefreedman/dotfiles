@@ -1,0 +1,7 @@
+{{ if ne .chezmoi.os "darwin" }}
+.zprofile
+.zshrc
+{{ end }}
+{{ if ne .chezmoi.os "windows" }}
+.config/powershell
+{{ end }}

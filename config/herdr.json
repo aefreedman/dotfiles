@@ -1,0 +1,8 @@
+{
+  "font": "JetBrainsMono Nerd Font",
+  "font_ligatures": true,
+  "theme": {
+    "light": "solarized-light",
+    "dark": "solarized-dark"
+  }
+}

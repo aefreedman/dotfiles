@@ -1,0 +1,30 @@
+if command -v oh-my-posh >/dev/null 2>&1; then
+  _dotfiles_theme="${DOTFILES_THEME:-solarized-dark}"
+  case "$_dotfiles_theme" in
+    solarized-dark|solarized-light) ;;
+    *) print -u2 'dotfiles: DOTFILES_THEME must be solarized-dark or solarized-light'; _dotfiles_theme=solarized-dark ;;
+  esac
+  eval "$(oh-my-posh init zsh --config "$HOME/.config/oh-my-posh/$_dotfiles_theme.omp.json")"
+  unset _dotfiles_theme
+else
+  print -u2 'dotfiles: oh-my-posh is missing; run the explicit bootstrap.'
+fi
+# Send workspace requests to WezTerm.
+wezwk() {
+  if [[ -z "${WEZTERM_PANE:-}" ]]; then
+    print -u2 'wezwk: run this command inside WezTerm'
+    return 1
+  fi
+  local target="${1:-$PWD}"
+  if [[ ! -d "$target" ]]; then
+    print -u2 'wezwk: directory does not exist'
+    return 1
+  fi
+  target="$(cd -- "$target" && pwd -P)" || return 1
+  local encoded
+  encoded="$(printf '%s' "$target" | base64 | tr -d '\r\n')" || return 1
+  printf '\033]1337;SetUserVar=open_workspace=%s\007' "$encoded"
+}
+if [[ -f "$HOME/.config/dotfiles/local.zshrc" ]]; then
+  source "$HOME/.config/dotfiles/local.zshrc"
+fi

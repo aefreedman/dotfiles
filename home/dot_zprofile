@@ -1,0 +1,18 @@
+# Login environment; prompt setup is in .zshrc.
+if [[ -x /opt/homebrew/bin/brew ]]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+elif [[ -x /usr/local/bin/brew ]]; then
+  eval "$(/usr/local/bin/brew shellenv)"
+else
+  print -u2 'dotfiles: Homebrew is missing; run the explicit bootstrap.'
+fi
+typeset -U path PATH
+if [[ -n "${HOMEBREW_PREFIX:-}" && -d "$HOMEBREW_PREFIX/opt/node@24/bin" ]]; then
+  path=("$HOMEBREW_PREFIX/opt/node@24/bin" $path)
+fi
+[[ -d "$HOME/.local/bin" ]] && path=("$HOME/.local/bin" $path)
+[[ -d "$HOME/.pi/agent/bin" ]] && path=("$HOME/.pi/agent/bin" $path)
+export PATH
+if [[ -f "$HOME/.config/dotfiles/local.zprofile" ]]; then
+  source "$HOME/.config/dotfiles/local.zprofile"
+fi

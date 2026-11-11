@@ -1,0 +1,3 @@
+- Installing tools, changing live configuration, and publishing require explicit approval.
+- Keep secrets and machine-local state out of Git.
+- Keep prose lean; omit what's clear from code or tests.
