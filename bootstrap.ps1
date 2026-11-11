@@ -2,7 +2,7 @@ param([switch]$Install)
 $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
 if (-not $Install) {
-    Write-Output 'Plan: install WinGet packages, fonts, Herdr, Pi, and its shared packages.'
+    Write-Output 'Plan: install WinGet packages, fonts, Herdr app/core, Pi, and its shared packages.'
     Write-Output 'No changes made. Use -Install to install.'
     return
 }

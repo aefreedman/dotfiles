@@ -20,7 +20,7 @@ Windows PowerShell:
 ./bootstrap.ps1 -Install
 ```
 
-macOS uses Homebrew; Windows requires WinGet from Microsoft App Installer. Resolve package/source agreements in WinGet if installation stops on one.
+macOS uses Homebrew; Windows requires WinGet from Microsoft App Installer. Resolve package/source agreements in WinGet if installation stops on one. Herdr core is installed and checked separately from the app.
 
 On macOS, install [Xcode from the App Store](https://apps.apple.com/app/xcode/id497799835).
 

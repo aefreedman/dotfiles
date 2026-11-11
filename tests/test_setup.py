@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from contextlib import redirect_stdout
+import io
 import json
 from pathlib import Path
 import subprocess
@@ -166,6 +168,91 @@ class PiTests(unittest.TestCase):
             (root / 'managed-install.json').write_text('{}', encoding='utf-8')
             with self.assertRaises(ValueError):
                 provision.managed_pi(str(launcher))
+
+
+class HerdrCoreTests(unittest.TestCase):
+    def test_missing_core_installs_and_verifies_on_both_platforms(self):
+        for platform in ['darwin', 'win32']:
+            with self.subTest(platform=platform), \
+                    patch.object(provision, 'herdr_core_path', side_effect=[None, 'installed-core']), \
+                    patch.object(provision, 'official_installer') as installer, \
+                    patch.object(provision, 'execute') as execute:
+                self.assertEqual(provision.ensure_herdr_core(platform), 'installed-core')
+                installer.assert_called_once_with(provision.MANIFEST['officialInstallers']['herdrCore'][platform], platform)
+                execute.assert_called_once_with(['installed-core', '--version'])
+
+    def test_existing_core_is_verified_without_reinstallation(self):
+        with patch.object(provision, 'herdr_core_path', return_value='existing-core'), \
+                patch.object(provision, 'official_installer') as installer, \
+                patch.object(provision, 'execute') as execute:
+            provision.ensure_herdr_core('darwin')
+            installer.assert_not_called()
+            execute.assert_called_once_with(['existing-core', '--version'])
+
+    def test_core_missing_from_path_is_found_in_default_locations(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            mac = home / '.local/bin/herdr-core'
+            windows = home / 'AppData/Local/Programs/herdr-core/herdr-core.exe'
+            for path in [mac, windows]:
+                path.parent.mkdir(parents=True)
+                path.write_text('test executable', encoding='utf-8')
+            with patch.object(provision.shutil, 'which', return_value=None), \
+                    patch.object(provision.Path, 'home', return_value=home), \
+                    patch.dict(provision.os.environ, {'LOCALAPPDATA': str(home / 'AppData/Local')}):
+                self.assertEqual(provision.herdr_core_path('darwin'), str(mac))
+                self.assertEqual(provision.herdr_core_path('win32'), str(windows))
+
+    def test_failed_install_is_not_reported_as_success(self):
+        with patch.object(provision, 'herdr_core_path', return_value=None), \
+                patch.object(provision, 'official_installer', side_effect=subprocess.CalledProcessError(1, 'installer')), \
+                patch.object(provision, 'execute') as execute:
+            with self.assertRaises(subprocess.CalledProcessError):
+                provision.ensure_herdr_core('darwin')
+            execute.assert_not_called()
+
+    def test_missing_executable_after_install_blocks(self):
+        with patch.object(provision, 'herdr_core_path', return_value=None), \
+                patch.object(provision, 'official_installer'), \
+                patch.object(provision, 'execute') as execute:
+            with self.assertRaisesRegex(RuntimeError, 'executable was not found'):
+                provision.ensure_herdr_core('darwin')
+            execute.assert_not_called()
+
+    def test_version_failure_blocks_without_reinstalling(self):
+        with patch.object(provision, 'herdr_core_path', return_value='broken-core'), \
+                patch.object(provision, 'official_installer') as installer, \
+                patch.object(provision, 'execute', side_effect=subprocess.CalledProcessError(1, 'broken-core')):
+            with self.assertRaises(subprocess.CalledProcessError):
+                provision.ensure_herdr_core('darwin')
+            installer.assert_not_called()
+
+    def test_core_installer_urls_are_allowed(self):
+        for platform in ['darwin', 'win32']:
+            with self.subTest(platform=platform), \
+                    patch.object(provision.urllib.request, 'urlopen') as download, \
+                    patch.object(provision, 'execute') as execute:
+                url = provision.MANIFEST['officialInstallers']['herdrCore'][platform]
+                response = download.return_value.__enter__.return_value
+                response.url = url
+                response.read.return_value = b'# test installer\n'
+                provision.official_installer(url, platform)
+                execute.assert_called_once()
+                script = Path(execute.call_args.args[0][-1])
+                self.assertEqual(script.suffix, '.ps1' if platform == 'win32' else '.sh')
+
+    def test_provisioning_checks_core_on_both_platforms(self):
+        for platform in ['darwin', 'win32']:
+            with self.subTest(platform=platform), tempfile.TemporaryDirectory() as directory, \
+                    patch.object(provision.sys, 'argv', ['provision.py', '--install', '--skip-packages', '--platform', platform]), \
+                    patch.object(provision.sys, 'platform', platform), \
+                    patch.object(provision.Path, 'home', return_value=Path(directory)), \
+                    patch.object(provision.shutil, 'which', side_effect=lambda name: 'test-' + name), \
+                    patch.object(provision, 'managed_pi', return_value=True), \
+                    patch.object(provision, 'ensure_herdr_core') as ensure, \
+                    patch.object(provision, 'execute'), redirect_stdout(io.StringIO()):
+                provision.main()
+                ensure.assert_called_once_with(platform)
 
 
 class IntegrationTests(unittest.TestCase):

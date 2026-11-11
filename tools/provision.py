@@ -24,7 +24,9 @@ def execute(argv: list[str]) -> None:
 
 
 def official_installer(url: str, platform: str) -> None:
-    approved = set(MANIFEST['officialInstallers']['pi'].values()) | {MANIFEST['officialInstallers']['herdrWindows']}
+    approved = (set(MANIFEST['officialInstallers']['pi'].values())
+                | set(MANIFEST['officialInstallers']['herdrCore'].values())
+                | {MANIFEST['officialInstallers']['herdrWindows']})
     if url not in approved or not url.startswith('https://'):
         raise ValueError('Unapproved installer URL')
     with tempfile.TemporaryDirectory(prefix='dotfiles-installer-') as directory:
@@ -38,6 +40,31 @@ def official_installer(url: str, platform: str) -> None:
             execute([shutil.which('pwsh') or 'powershell.exe', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', str(script)])
         else:
             execute(['/bin/bash', str(script)])
+
+
+def herdr_core_path(platform: str) -> str | None:
+    command = shutil.which('herdr-core')
+    if command:
+        return command
+    if platform == 'win32':
+        local_appdata = os.environ.get('LOCALAPPDATA')
+        if not local_appdata:
+            raise RuntimeError('LOCALAPPDATA is not set; cannot locate herdr-core')
+        candidate = Path(local_appdata) / 'Programs/herdr-core/herdr-core.exe'
+    else:
+        candidate = Path.home() / '.local/bin/herdr-core'
+    return str(candidate) if candidate.is_file() else None
+
+
+def ensure_herdr_core(platform: str) -> str:
+    core = herdr_core_path(platform)
+    if not core:
+        official_installer(MANIFEST['officialInstallers']['herdrCore'][platform], platform)
+        core = herdr_core_path(platform)
+        if not core:
+            raise RuntimeError('herdr-core installer finished, but its executable was not found')
+    execute([core, '--version'])
+    return core
 
 
 def managed_pi(path: str) -> bool:
@@ -79,6 +106,7 @@ def main() -> None:
     else:
         print('WinGet packages: ' + ', '.join(group['winget']))
         print('Original JetBrains Mono: per-user install from the official release')
+    print('Herdr core: official installer if missing; verify installed executable')
     print('Pi: latest official release; packages: ' + ', '.join(MANIFEST['piPackages']))
     for item in group.get('manual', []):
         print('Install separately: ' + item['name'] + ' - ' + item['url'])
@@ -103,6 +131,7 @@ def main() -> None:
         execute([shutil.which('pwsh') or 'powershell.exe', '-NoProfile', '-File', str(ROOT / 'tools/install-fonts.ps1')])
         if not shutil.which('herdr-app') and not (Path(os.environ['LOCALAPPDATA']) / 'Programs/herdr-app/herdr-app.exe').exists():
             official_installer(MANIFEST['officialInstallers']['herdrWindows'], platform)
+    ensure_herdr_core(platform)
     if current_pi:
         execute([current_pi, 'update'])
     else:

@@ -2,7 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 if [[ "${1:-}" != "--install" ]]; then
-  printf '%s\n' 'Plan: install Homebrew packages, Pi, and its shared packages.' 'No changes made. Use --install to install.'
+  printf '%s\n' 'Plan: install Homebrew packages, Herdr core, Pi, and its shared packages.' 'No changes made. Use --install to install.'
   exit 0
 fi
 if [[ "$(uname -s)" != "Darwin" ]]; then
