@@ -250,9 +250,112 @@ class HerdrCoreTests(unittest.TestCase):
                     patch.object(provision.shutil, 'which', side_effect=lambda name: 'test-' + name), \
                     patch.object(provision, 'managed_pi', return_value=True), \
                     patch.object(provision, 'ensure_herdr_core') as ensure, \
+                    patch.object(provision, 'ensure_unity_cli') as unity, \
                     patch.object(provision, 'execute'), redirect_stdout(io.StringIO()):
                 provision.main()
                 ensure.assert_called_once_with(platform)
+                unity.assert_called_once_with(platform)
+
+
+class UnityCliTests(unittest.TestCase):
+    def test_existing_cli_is_verified_without_reinstallation(self):
+        for platform in ['darwin', 'win32']:
+            with self.subTest(platform=platform), \
+                    patch.object(provision, 'unity_cli_path', return_value='existing-unity'), \
+                    patch.object(provision, 'official_installer') as installer, \
+                    patch.object(provision, 'execute') as execute:
+                self.assertEqual(provision.ensure_unity_cli(platform), 'existing-unity')
+                installer.assert_not_called()
+                execute.assert_called_once_with(['existing-unity', '--version'])
+
+    def test_windows_install_disables_agent_setup_without_changing_parent_environment(self):
+        with patch.object(provision, 'unity_cli_path', side_effect=[None, 'installed-unity']), \
+                patch.object(provision, 'official_installer') as installer, \
+                patch.object(provision, 'execute') as execute, \
+                patch.dict(provision.os.environ, {'UNITY_CLI_SKIP_SETUP': '0'}):
+            self.assertEqual(provision.ensure_unity_cli('win32'), 'installed-unity')
+            installer.assert_called_once_with(provision.MANIFEST['officialInstallers']['unityWindows'],
+                                              'win32', env={**provision.os.environ, 'UNITY_CLI_SKIP_SETUP': '1'})
+            self.assertEqual(provision.os.environ['UNITY_CLI_SKIP_SETUP'], '0')
+            execute.assert_called_once_with(['installed-unity', '--version'])
+
+    def test_mac_missing_cli_requires_homebrew_instead_of_another_installer(self):
+        with patch.object(provision, 'unity_cli_path', return_value=None), \
+                patch.object(provision, 'official_installer') as installer:
+            with self.assertRaisesRegex(RuntimeError, 'Homebrew cask'):
+                provision.ensure_unity_cli('darwin')
+            installer.assert_not_called()
+
+    def test_windows_default_and_custom_install_locations_are_found_without_path(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for environment, binary in [
+                ({'LOCALAPPDATA': str(root / 'Local')}, root / 'Local/Unity/bin/unity.exe'),
+                ({'UNITY_CLI_HOME': str(root / 'Custom')}, root / 'Custom/bin/unity.exe'),
+            ]:
+                binary.parent.mkdir(parents=True)
+                binary.write_text('test executable', encoding='utf-8')
+                with self.subTest(environment=environment), \
+                        patch.dict(provision.os.environ, environment, clear=True), \
+                        patch.object(provision.shutil, 'which', return_value=None):
+                    self.assertEqual(provision.unity_cli_path('win32'), str(binary))
+
+    def test_mac_homebrew_locations_are_found_without_path(self):
+        for binary in ['/opt/homebrew/bin/unity', '/usr/local/bin/unity']:
+            with self.subTest(binary=binary), \
+                    patch.object(provision.shutil, 'which', return_value=None), \
+                    patch.object(provision.Path, 'is_file', autospec=True,
+                                 side_effect=lambda path: path.as_posix() == binary):
+                self.assertEqual(provision.unity_cli_path('darwin'), str(Path(binary)))
+
+    def test_missing_windows_environment_is_reported(self):
+        with patch.dict(provision.os.environ, {}, clear=True), \
+                patch.object(provision.shutil, 'which', return_value=None):
+            with self.assertRaisesRegex(RuntimeError, 'LOCALAPPDATA or UNITY_CLI_HOME'):
+                provision.unity_cli_path('win32')
+
+    def test_failed_install_propagates_without_verification(self):
+        with patch.object(provision, 'unity_cli_path', return_value=None), \
+                patch.object(provision, 'official_installer', side_effect=subprocess.CalledProcessError(1, 'installer')), \
+                patch.object(provision, 'execute') as execute:
+            with self.assertRaises(subprocess.CalledProcessError):
+                provision.ensure_unity_cli('win32')
+            execute.assert_not_called()
+
+    def test_missing_executable_after_install_blocks(self):
+        with patch.object(provision, 'unity_cli_path', return_value=None), \
+                patch.object(provision, 'official_installer'), \
+                patch.object(provision, 'execute') as execute:
+            with self.assertRaisesRegex(RuntimeError, 'executable was not found'):
+                provision.ensure_unity_cli('win32')
+            execute.assert_not_called()
+
+    def test_version_failure_blocks_without_reinstalling(self):
+        with patch.object(provision, 'unity_cli_path', return_value='broken-unity'), \
+                patch.object(provision, 'official_installer') as installer, \
+                patch.object(provision, 'execute', side_effect=subprocess.CalledProcessError(1, 'broken-unity')):
+            with self.assertRaises(subprocess.CalledProcessError):
+                provision.ensure_unity_cli('win32')
+            installer.assert_not_called()
+
+    def test_installer_is_approved_and_receives_environment(self):
+        with patch.object(provision.urllib.request, 'urlopen') as download, \
+                patch.object(provision, 'execute') as execute:
+            url = provision.MANIFEST['officialInstallers']['unityWindows']
+            response = download.return_value.__enter__.return_value
+            response.url = url
+            response.read.return_value = b'# test installer\n'
+            env = {'UNITY_CLI_SKIP_SETUP': '1'}
+            provision.official_installer(url, 'win32', env=env)
+            execute.assert_called_once()
+            self.assertEqual(execute.call_args.kwargs, {'env': env})
+            self.assertEqual(Path(execute.call_args.args[0][-1]).suffix, '.ps1')
+
+    def test_execute_passes_environment_to_child(self):
+        with patch.object(provision.subprocess, 'run') as run, redirect_stdout(io.StringIO()):
+            env = {'UNITY_CLI_SKIP_SETUP': '1'}
+            provision.execute(['unity', '--version'], env=env)
+            run.assert_called_once_with(['unity', '--version'], check=True, env=env)
 
 
 class IntegrationTests(unittest.TestCase):

@@ -23,6 +23,7 @@
       "font-jetbrains-mono-nerd-font",
       "herdr-app",
       "unity-hub",
+      "unity-cli",
       "unity-version-control",
       "rider",
       "docker-desktop",
@@ -70,6 +71,7 @@
       "win32": "https://pi.dev/install.ps1"
     },
     "herdrWindows": "https://releases.herdr.dev/app/install.ps1",
+    "unityWindows": "https://unity.com/install.ps1",
     "herdrCore": {
       "darwin": "https://releases.herdr.dev/core/install.sh",
       "win32": "https://releases.herdr.dev/core/install.ps1"

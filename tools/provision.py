@@ -16,17 +16,17 @@ ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = json.loads((ROOT / 'packages/manifest.json').read_text(encoding='utf-8'))
 
 
-def execute(argv: list[str]) -> None:
+def execute(argv: list[str], *, env: dict[str, str] | None = None) -> None:
     print('+ ' + subprocess.list2cmdline(argv), flush=True)
     if sys.platform == 'win32' and Path(argv[0]).suffix.lower() in ['.cmd', '.bat']:
         argv = [os.environ.get('COMSPEC', 'cmd.exe'), '/d', '/s', '/c', subprocess.list2cmdline(argv)]
-    subprocess.run(argv, check=True)
+    subprocess.run(argv, check=True, env=env)
 
 
-def official_installer(url: str, platform: str) -> None:
+def official_installer(url: str, platform: str, *, env: dict[str, str] | None = None) -> None:
     approved = (set(MANIFEST['officialInstallers']['pi'].values())
                 | set(MANIFEST['officialInstallers']['herdrCore'].values())
-                | {MANIFEST['officialInstallers']['herdrWindows']})
+                | {MANIFEST['officialInstallers']['herdrWindows'], MANIFEST['officialInstallers']['unityWindows']})
     if url not in approved or not url.startswith('https://'):
         raise ValueError('Unapproved installer URL')
     with tempfile.TemporaryDirectory(prefix='dotfiles-installer-') as directory:
@@ -37,9 +37,13 @@ def official_installer(url: str, platform: str) -> None:
                 raise ValueError('Installer redirected away from HTTPS')
             script.write_bytes(response.read())
         if platform == 'win32':
-            execute([shutil.which('pwsh') or 'powershell.exe', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', str(script)])
+            command = [shutil.which('pwsh') or 'powershell.exe', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', str(script)]
         else:
-            execute(['/bin/bash', str(script)])
+            command = ['/bin/bash', str(script)]
+        if env is None:
+            execute(command)
+        else:
+            execute(command, env=env)
 
 
 def herdr_core_path(platform: str) -> str | None:
@@ -65,6 +69,39 @@ def ensure_herdr_core(platform: str) -> str:
             raise RuntimeError('herdr-core installer finished, but its executable was not found')
     execute([core, '--version'])
     return core
+
+
+def unity_cli_path(platform: str) -> str | None:
+    command = shutil.which('unity')
+    if command:
+        return command
+    if platform == 'win32':
+        custom_home = os.environ.get('UNITY_CLI_HOME')
+        local_appdata = os.environ.get('LOCALAPPDATA')
+        if custom_home:
+            candidates = [Path(custom_home) / 'bin/unity.exe']
+        elif local_appdata:
+            candidates = [Path(local_appdata) / 'Unity/bin/unity.exe']
+        else:
+            raise RuntimeError('LOCALAPPDATA or UNITY_CLI_HOME must be set to locate Unity CLI')
+    else:
+        candidates = [Path('/opt/homebrew/bin/unity'), Path('/usr/local/bin/unity')]
+    return next((str(path) for path in candidates if path.is_file()), None)
+
+
+def ensure_unity_cli(platform: str) -> str:
+    unity = unity_cli_path(platform)
+    if not unity:
+        if platform == 'darwin':
+            raise RuntimeError('Unity CLI is missing. Run bootstrap.sh --install to install its Homebrew cask.')
+        # The CLI installer also installs agent skills unless explicitly disabled.
+        official_installer(MANIFEST['officialInstallers']['unityWindows'], platform,
+                           env={**os.environ, 'UNITY_CLI_SKIP_SETUP': '1'})
+        unity = unity_cli_path(platform)
+        if not unity:
+            raise RuntimeError('Unity CLI installer finished, but its executable was not found')
+    execute([unity, '--version'])
+    return unity
 
 
 def managed_pi(path: str) -> bool:
@@ -106,6 +143,7 @@ def main() -> None:
     else:
         print('WinGet packages: ' + ', '.join(group['winget']))
         print('Original JetBrains Mono: per-user install from the official release')
+        print('Unity CLI: official installer if missing; verify installed executable')
     print('Herdr core: official installer if missing; verify installed executable')
     print('Pi: latest official release; packages: ' + ', '.join(MANIFEST['piPackages']))
     for item in group.get('manual', []):
@@ -132,6 +170,7 @@ def main() -> None:
         if not shutil.which('herdr-app') and not (Path(os.environ['LOCALAPPDATA']) / 'Programs/herdr-app/herdr-app.exe').exists():
             official_installer(MANIFEST['officialInstallers']['herdrWindows'], platform)
     ensure_herdr_core(platform)
+    ensure_unity_cli(platform)
     if current_pi:
         execute([current_pi, 'update'])
     else:
