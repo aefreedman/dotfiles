@@ -1,0 +1,9 @@
+{
+  "defaultProvider": "openai",
+  "defaultModel": "gpt-6.2-sol",
+  "defaultThinkingLevel": "medium",
+  "enabledModels": [
+    "openai/gpt-6.2-sol",
+    "openai/gpt-6.2-astra"
+  ]
+}

@@ -94,6 +94,36 @@ class JsoncTests(unittest.TestCase):
 
 
 class PiTests(unittest.TestCase):
+    def test_model_only_apply_preserves_local_subagents_and_other_apps(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            settings = home / '.pi/agent/settings.json'
+            settings.parent.mkdir(parents=True)
+            existing = '{"defaultProvider":"openai-codex", "subagents": {/* keep */ "agentOverrides":{"scout":{"machine":"local"}}}}'
+            settings.write_text(existing, encoding='utf-8')
+            argv = ['preferences.py', '--pi-models', '--home', str(home), '--platform', 'darwin']
+            with patch.object(sys, 'argv', argv), redirect_stdout(io.StringIO()) as preview:
+                preferences.main()
+            self.assertIn('"openai-codex" -> "openai"', preview.getvalue())
+            self.assertEqual(settings.read_text(encoding='utf-8'), existing)
+            with patch.object(sys, 'argv', argv + ['--apply']), redirect_stdout(io.StringIO()):
+                preferences.main()
+            result = settings.read_text(encoding='utf-8')
+            self.assertIn('/* keep */', result)
+            parsed = preferences.parse_jsonc(result)
+            self.assertEqual(parsed['defaultThinkingLevel'], 'medium')
+            self.assertEqual(parsed['subagents'], preferences.parse_jsonc(existing)['subagents'])
+            self.assertFalse((home / '.config').exists())
+
+    def test_model_availability_requires_exact_provider(self):
+        output = 'provider model context\nopenai-codex gpt-6.2-sol 500K\n'
+        with patch.object(preferences.shutil, 'which', return_value='pi'), patch.object(
+            preferences.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, output)
+        ):
+            preferences.require_pi_models(Path('/synthetic'), ['openai-codex/gpt-6.2-sol'])
+            with self.assertRaisesRegex(ValueError, 'openai/gpt-6.2-sol'):
+                preferences.require_pi_models(Path('/synthetic'), ['openai/gpt-6.2-sol'])
+
     def test_four_core_packages_on_new_machine(self):
         value = preferences.pi_updates({}, 'darwin')
         self.assertEqual(len(value['packages']), 4)

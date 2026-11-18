@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import subprocess
 import sys
 import tempfile
 
@@ -208,6 +209,28 @@ def preference_targets(home: Path, platform: str, appdata: Path | None = None) -
     ]
 
 
+def require_pi_models(agent_dir: Path, models: list[str]) -> None:
+    launcher = shutil.which('pi')
+    if not launcher:
+        names = ['pi.cmd'] if sys.platform == 'win32' else ['pi']
+        launcher = next((str(agent_dir / 'bin' / name) for name in names
+                         if (agent_dir / 'bin' / name).is_file()), None)
+    if not launcher:
+        raise ValueError('Pi launcher not found; open a fresh shell or install Pi first')
+    try:
+        result = subprocess.run([launcher, '--list-models'], capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise ValueError('Could not check Pi model availability') from exc
+    if result.returncode:
+        raise ValueError('Pi could not list models; run pi --list-models to diagnose')
+    available = {'/'.join(columns[:2]) for line in result.stdout.splitlines()
+                 if len(columns := line.split()) >= 2}
+    missing = sorted(set(models) - available)
+    if missing:
+        raise ValueError('Models not available in this Pi login: ' + ', '.join(missing) +
+                         '. No settings written. Check /login and pi --list-models.')
+
+
 def atomic_write(path: Path, text: str, backup_root: Path) -> None:
     if path.is_symlink():
         raise ValueError('Refusing to replace a symlinked preference file; review its owner first')
@@ -236,6 +259,7 @@ def atomic_write(path: Path, text: str, backup_root: Path) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--apply', action='store_true', help='Write changes; default is a preview')
+    parser.add_argument('--pi-models', action='store_true', help='Only manage the shared Pi model defaults')
     parser.add_argument('--home', type=Path, default=Path.home())
     parser.add_argument('--platform', choices=['darwin', 'win32'], default=sys.platform)
     args = parser.parse_args()
@@ -243,7 +267,14 @@ def main() -> None:
     if args.apply and home == Path.home().resolve() and args.platform != sys.platform:
         parser.error('Refusing cross-platform preference application to the real home directory')
     appdata = Path(os.environ['APPDATA']) if args.platform == 'win32' and home == Path.home().resolve() and os.environ.get('APPDATA') else None
-    targets = preference_targets(home, args.platform, appdata)
+    if args.pi_models:
+        agent_dir = home / '.pi/agent'
+        if home == Path.home().resolve() and os.environ.get('PI_CODING_AGENT_DIR'):
+            agent_dir = Path(os.environ['PI_CODING_AGENT_DIR']).expanduser().resolve()
+        baseline = json.loads((ROOT / 'config/pi-models.json').read_text(encoding='utf-8'))
+        targets = [(agent_dir / 'settings.json', baseline)]
+    else:
+        targets = preference_targets(home, args.platform, appdata)
     prepared = []
     for path, updates in targets:
         old = read_settings(path) if path.exists() else '{}\n'
@@ -251,11 +282,20 @@ def main() -> None:
         old_data = parse_jsonc(old)
         changed = [key for key, value in updates.items() if key not in old_data
                    or json.dumps(old_data[key], sort_keys=True) != json.dumps(value, sort_keys=True)]
-        print(('MERGE ' if changed else 'OK ') + str(path.relative_to(home)) + (': ' + ', '.join(changed) if changed else ''))
+        print(('MERGE ' if changed else 'OK ') + str(path.relative_to(home) if path.is_relative_to(home) else path) +
+              (': ' + ', '.join(changed) if changed else ''))
+        if args.pi_models:
+            for key in changed:
+                print(f'  {key}: {json.dumps(old_data[key]) if key in old_data else "(unset)"} -> {json.dumps(updates[key])}')
         if old != merged:
             prepared.append((path, merged))
     # Validate all files before writing any.
     if args.apply:
+        if args.pi_models and prepared and home == Path.home().resolve():
+            try:
+                require_pi_models(agent_dir, baseline['enabledModels'])
+            except ValueError as exc:
+                parser.error(str(exc))
         stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
         backups = home / '.local/state/dotfiles/backups' / stamp
         for path, merged in prepared:

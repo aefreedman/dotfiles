@@ -57,6 +57,17 @@ These helpers preserve unrelated settings and existing optional Pi packages. The
 
 Existing Oh My Posh initialization in a PowerShell profile needs review before integration. Herdr's theme picker can override the shared Solarized defaults. Reopen terminals after PATH or font changes; do not restart a Herdr core with active work.
 
+## Pi model baseline
+
+Preview or apply only `config/pi-models.json`:
+
+```sh
+uv run --no-project --python 3.14 tools/preferences.py --pi-models
+uv run --no-project --python 3.14 tools/preferences.py --pi-models --apply
+```
+
+Apply checks that the exact provider/model IDs are available in Pi before writing. Sign in to OpenAI separately on each machine if needed. This only manages the startup provider, model, thinking level, and model cycle; per-model thinking overrides, subagent settings, saved profiles, and auth stay local. Run `/reload` after applying and check the defaults in a new session.
+
 ## Herdr terminal width
 
 With Herdr App running, apply just the width layout and mod from the repo root:
