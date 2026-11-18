@@ -57,6 +57,19 @@ These helpers preserve unrelated settings and existing optional Pi packages. The
 
 Existing Oh My Posh initialization in a PowerShell profile needs review before integration. Herdr's theme picker can override the shared Solarized defaults. Reopen terminals after PATH or font changes; do not restart a Herdr core with active work.
 
+## Herdr terminal width
+
+With Herdr App running, apply just the width layout and mod from the repo root:
+
+```sh
+chezmoi --source . --less-interactive apply \
+  ~/.config/herdr-app/mods/terminal-width-status \
+  ~/.config/herdr-app/layouts/half-width.json
+herdr-app do layout.switch '{"name":"half-width"}'
+```
+
+**Max width** in the status bar sets the terminal cap and alignment. These preferences stay local, starting at 750 px and left-aligned on a fresh install. Herdr can rewrite the live layout: review and back up any manual layout edits before applying updates. The repo does not manage Herdr session or Core machine state.
+
 ## Local preferences
 
 - Set `DOTFILES_THEME=solarized-light` for the light prompt; dark is the default.
