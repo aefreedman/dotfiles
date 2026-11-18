@@ -68,7 +68,7 @@ chezmoi --source . --less-interactive apply \
 herdr-app do layout.switch '{"name":"half-width"}'
 ```
 
-**Max width** in the status bar sets the terminal cap and alignment. These preferences stay local, starting at 750 px and left-aligned on a fresh install. Herdr can rewrite the live layout: review and back up any manual layout edits before applying updates. The repo does not manage Herdr session or Core machine state.
+**Max width** in the status bar sets the terminal cap and alignment. Click **Full width** to remove the cap, and click it again to restore your previous width and alignment. These preferences stay local, starting at 750 px and left-aligned on a fresh install. Herdr can rewrite the live layout: review and back up any manual layout edits before applying updates. The repo does not manage Herdr session or Core machine state.
 
 ## Local preferences
 

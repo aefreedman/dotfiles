@@ -18,13 +18,17 @@ export class WidthControls {
     // During a layout switch, layout() can still describe the previous layout.
     this.width = Number(saved?.width) || find(layout(), "main")?.max || 750;
     this.align = ["left", "center", "right"].includes(saved?.align) ? saved.align : "left";
+    this.fullWidth = saved?.fullWidth === true;
     this.input = InputState.new({ value: String(this.width) });
     this.input.on("submit", (_, cx) => this.commit(cx));
     this.input.on("blur", (_, cx) => this.commit(cx));
     if (!checking()) cx.spawn(async (cx) => {
       for (;;) {
         const command = await nextCommand();
-        if (["left", "center", "right"].includes(command)) {
+        if (command === "toggle") {
+          this.toggle();
+          cx.notify();
+        } else if (["left", "center", "right"].includes(command)) {
           this.align = command;
           this.apply();
           cx.notify();
@@ -46,6 +50,11 @@ export class WidthControls {
     cx.notify();
   }
 
+  toggle() {
+    this.fullWidth = !this.fullWidth;
+    this.apply();
+  }
+
   measure(size) {
     if (this.available === size.width || checking()) return;
     this.available = size.width;
@@ -59,18 +68,23 @@ export class WidthControls {
     const before = find(tree, "terminal-space-before");
     const after = find(tree, "terminal-space-after");
     if (!main || !before || !after) return;
-    const panel = find(tree, "panel");
-    const panelWidth = panel && !panel.hidden ? (panel.size?.px ?? 368) + 8 : 0;
-    // The status bar spans the work area; subtract the work body's padding
-    // and any open side panel. Keep the cap even when the window is smaller.
-    const available = Math.max(1, (this.available ?? 1441) - 16 - panelWidth);
-    main.max = this.width;
-    main.size = { px: Math.min(this.width, available) };
-    before.hidden = this.align === "left";
-    after.hidden = this.align === "right";
+    if (this.fullWidth) {
+      delete main.max;
+      main.size = { weight: 1 };
+      before.hidden = after.hidden = true;
+    } else {
+      const panel = find(tree, "panel");
+      const panelWidth = panel && !panel.hidden ? (panel.size?.px ?? 368) + 8 : 0;
+      // Subtract the work body's padding and any open side panel.
+      const available = Math.max(1, (this.available ?? 1441) - 16 - panelWidth);
+      main.max = this.width;
+      main.size = { px: Math.min(this.width, available) };
+      before.hidden = this.align === "left";
+      after.hidden = this.align === "right";
+    }
     const prefs = shared(KEY);
-    if (prefs?.width !== this.width || prefs?.align !== this.align)
-      setShared(KEY, { width: this.width, align: this.align });
+    if (prefs?.width !== this.width || prefs?.align !== this.align || prefs?.fullWidth !== this.fullWidth)
+      setShared(KEY, { width: this.width, align: this.align, fullWidth: this.fullWidth });
     if (JSON.stringify(tree) !== JSON.stringify(layout())) run("layout.set", { layout: tree });
   }
 
@@ -79,8 +93,10 @@ export class WidthControls {
       .px(6).h(22).flex().items_center().rounded(4)
       .bg(active ? t.selected : t.chrome).text_color(active ? t.foreground : t.muted)
       .hover(s => s.bg(t.hover)).on_click((_, cx) => { action(); cx.notify(); }).child(label);
-    return h_flex().items_center().gap(4)
-      .child("Max width")
+    const row = h_flex().items_center().gap(4)
+      .child(button("Full width", () => this.toggle(), this.fullWidth));
+    if (this.fullWidth) return row;
+    return row.child("Max width")
       .child(button("−", () => { this.width = Math.max(240, this.width - 50); this.input.set_value(String(this.width)); this.apply(); }))
       .child(Input.new(this.input).w(58).h(22).px(5).text_size(12).bg(t.surface).text_color(t.foreground).border(1).border_color(t.border).rounded(4))
       .child("px")
