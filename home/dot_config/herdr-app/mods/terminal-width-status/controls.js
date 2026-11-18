@@ -15,7 +15,8 @@ function find(node, id) {
 export class WidthControls {
   constructor(cx) {
     const saved = shared(KEY);
-    this.width = Number(saved?.width) || find(layout(), "main")?.max || 713;
+    // During a layout switch, layout() can still describe the previous layout.
+    this.width = Number(saved?.width) || find(layout(), "main")?.max || 750;
     this.align = ["left", "center", "right"].includes(saved?.align) ? saved.align : "left";
     this.input = InputState.new({ value: String(this.width) });
     this.input.on("submit", (_, cx) => this.commit(cx));
