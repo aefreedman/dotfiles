@@ -81,6 +81,17 @@ herdr-app do layout.switch '{"name":"half-width"}'
 
 **Max width** in the status bar sets the terminal cap and alignment. Click **Full width** to remove the cap, and click it again to restore your previous width and alignment. These preferences stay local, starting at 750 px and left-aligned on a fresh install. Herdr can rewrite the live layout: review and back up any manual layout edits before applying updates. The repo does not manage Herdr session or Core machine state.
 
+## Herdr Markdown pane
+
+Apply the viewer independently of your layout:
+
+```sh
+chezmoi --source . --less-interactive apply ~/.config/herdr-app/mods/markdown-viewer
+herdr-app do pane.split '{"direction":"right","mod":"markdown-viewer","props":{"file":"/absolute/path/to/note.md"}}'
+```
+
+The pane is read-only and refreshes when an agent or editor saves the file. Use an absolute path on the machine running the Herdr App, not the terminal's remote machine. The mod needs no credentials or helper process.
+
 ## Local preferences
 
 - Set `DOTFILES_THEME=solarized-light` for the light prompt; dark is the default.
