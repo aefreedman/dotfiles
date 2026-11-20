@@ -22,13 +22,18 @@
       "wezterm",
       "font-jetbrains-mono",
       "font-jetbrains-mono-nerd-font",
+      "font-iosevka",
+      "font-iosevka-aile",
+      "font-iosevka-etoile",
+      "font-recursive-desktop",
       "herdr-app",
       "unity-hub",
       "unity-cli",
       "unity-version-control",
       "rider",
       "docker-desktop",
-      "parsec"
+      "parsec",
+      "obsidian"
     ],
     "manual": [
       {
@@ -57,6 +62,7 @@
       "JetBrains.Rider",
       "Docker.DockerDesktop",
       "Parsec.Parsec",
+      "Obsidian.Obsidian",
       "OpenJS.NodeJS.LTS",
       "astral-sh.uv",
       "BurntSushi.ripgrep.MSVC",
@@ -64,7 +70,33 @@
       "DEVCOM.JetBrainsMonoNerdFont"
     ],
     "manual": [],
-    "originalFontInstaller": "tools/install-fonts.ps1"
+    "originalFontInstaller": "tools/install-fonts.ps1",
+    "fontArchives": [
+      {
+        "name": "Iosevka",
+        "url": "https://github.com/be5invis/Iosevka/releases/download/v34.9.1/SuperTTC-Iosevka-34.9.1.zip",
+        "sha256": "3db66158ad06ffab603f7d89b40cdaf1dbfad374a902f8717aa9f5317cc2f9db",
+        "file": "Iosevka.ttc"
+      },
+      {
+        "name": "Iosevka Aile",
+        "url": "https://github.com/be5invis/Iosevka/releases/download/v34.9.1/SuperTTC-IosevkaAile-34.9.1.zip",
+        "sha256": "23e285dd0962ea27b7d71185fe7700463c861aa9ef11353bc3d200ab8764d5dd",
+        "file": "IosevkaAile.ttc"
+      },
+      {
+        "name": "Iosevka Etoile",
+        "url": "https://github.com/be5invis/Iosevka/releases/download/v34.9.1/SuperTTC-IosevkaEtoile-34.9.1.zip",
+        "sha256": "22f051322c2708122952856aaf6bf067fa27247faad09904aa6067ebd2d33785",
+        "file": "IosevkaEtoile.ttc"
+      },
+      {
+        "name": "Recursive",
+        "url": "https://github.com/arrowtype/recursive/releases/download/v1.085/ArrowType-Recursive-1.085.zip",
+        "sha256": "cbcbdf7a0e181d284a9235e09ed5f3873e527bc5dd1d977df71cdc1ff937da02",
+        "file": "ArrowType-Recursive-1.085/Recursive_Desktop/Recursive_VF_1.085.ttf"
+      }
+    ]
   },
   "officialInstallers": {
     "pi": {

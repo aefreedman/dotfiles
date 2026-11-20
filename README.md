@@ -6,12 +6,14 @@ Windows and macOS dotfiles managed with chezmoi.
 
 Run from this directory. The bootstrap scripts preview by default; installation requires a flag.
 
-macOS:
+macOS (existing setup):
 
 ```sh
-bash bootstrap.sh
-bash bootstrap.sh --install
+bash bootstrap.sh --diff  # List missing Brewfile entries (also the default)
+bash bootstrap.sh --sync  # Install missing Brewfile entries
 ```
+
+The diff exits nonzero if the Brewfile isn't satisfied. Sync skips upgrades and removals of existing packages, though Homebrew may upgrade dependencies required by a new install. Neither mode checks or applies app settings, Pi packages, or Herdr core. Use `bash bootstrap.sh --install` for a full bootstrap.
 
 Windows PowerShell:
 
@@ -21,6 +23,8 @@ Windows PowerShell:
 ```
 
 macOS uses Homebrew; Windows requires WinGet from Microsoft App Installer. Resolve package/source agreements in WinGet if installation stops on one. Herdr core is installed and checked separately from the app.
+
+Both platforms install Iosevka, Iosevka Aile, Iosevka Etoile, and Recursive. Obsidian font choices stay in each vault; set them under **Settings → Appearance**.
 
 On macOS, install [Xcode from the App Store](https://apps.apple.com/app/xcode/id497799835).
 

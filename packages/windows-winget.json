@@ -55,6 +55,9 @@
           "PackageIdentifier": "Parsec.Parsec"
         },
         {
+          "PackageIdentifier": "Obsidian.Obsidian"
+        },
+        {
           "PackageIdentifier": "OpenJS.NodeJS.LTS"
         },
         {

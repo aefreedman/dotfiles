@@ -3,6 +3,7 @@ from __future__ import annotations
 from contextlib import redirect_stdout
 import io
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -449,6 +450,37 @@ class RepositoryTests(unittest.TestCase):
             for segment in segments:
                 if segment['type'] == 'plastic':
                     self.assertNotIn('fetch_status', segment.get('properties', {}))
+
+    @unittest.skipUnless(sys.platform == 'darwin', 'macOS bootstrap')
+    def test_macos_diff_and_sync_only_run_brew_bundle(self):
+        with tempfile.TemporaryDirectory() as directory:
+            brew = Path(directory) / 'brew'
+            brew.write_text('#!/bin/sh\nprintf "%s\\n" "$*"\n[ "$2" != check ]\n', encoding='utf-8')
+            brew.chmod(0o755)
+            uv = Path(directory) / 'uv'
+            uv.write_text('#!/bin/sh\nexit 99\n', encoding='utf-8')
+            uv.chmod(0o755)
+            env = {**os.environ, 'PATH': directory + os.pathsep + os.environ['PATH']}
+            for args, expected, status in [
+                ([], 'bundle check --file packages/Brewfile --no-upgrade --verbose', 1),
+                (['--diff'], 'bundle check --file packages/Brewfile --no-upgrade --verbose', 1),
+                (['--sync'], 'bundle install --file packages/Brewfile --no-upgrade', 0),
+            ]:
+                with self.subTest(args=args):
+                    result = subprocess.run(
+                        ['/bin/bash', str(ROOT / 'bootstrap.sh'), *args],
+                        env=env, text=True, capture_output=True,
+                    )
+                    self.assertEqual(result.returncode, status, result.stderr)
+                    self.assertEqual(result.stdout.splitlines()[-1], expected)
+
+    def test_windows_plan_lists_shared_fonts(self):
+        result = subprocess.run(
+            [sys.executable, str(ROOT / 'tools/provision.py'), '--platform', 'win32'],
+            text=True, capture_output=True, check=True,
+        )
+        self.assertIn('Per-user fonts from official releases: JetBrains Mono, Iosevka, Iosevka Aile, Iosevka Etoile, Recursive', result.stdout)
+        self.assertIn('Plan only', result.stdout)
 
     def test_default_commands_are_plans(self):
         for script in ['provision.py', 'preferences.py', 'integrate.py']:

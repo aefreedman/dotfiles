@@ -142,7 +142,8 @@ def main() -> None:
         print('Homebrew casks: ' + ', '.join(group['casks']))
     else:
         print('WinGet packages: ' + ', '.join(group['winget']))
-        print('Original JetBrains Mono: per-user install from the official release')
+        fonts = ['JetBrains Mono', *(font['name'] for font in group['fontArchives'])]
+        print('Per-user fonts from official releases: ' + ', '.join(fonts))
         print('Unity CLI: official installer if missing; verify installed executable')
     print('Herdr core: official installer if missing; verify installed executable')
     print('Pi: latest official release; packages: ' + ', '.join(MANIFEST['piPackages']))
@@ -166,7 +167,7 @@ def main() -> None:
                 raise RuntimeError('WinGet is missing. Install/update Microsoft App Installer first.')
             execute([winget, 'import', '--import-file', str(ROOT / 'packages/windows-winget.json'), '--ignore-versions', '--disable-interactivity'])
     if platform == 'win32':
-        execute([shutil.which('pwsh') or 'powershell.exe', '-NoProfile', '-File', str(ROOT / 'tools/install-fonts.ps1')])
+        execute([shutil.which('pwsh') or 'powershell.exe', '-NoProfile', '-File', str(ROOT / group['originalFontInstaller'])])
         if not shutil.which('herdr-app') and not (Path(os.environ['LOCALAPPDATA']) / 'Programs/herdr-app/herdr-app.exe').exists():
             official_installer(MANIFEST['officialInstallers']['herdrWindows'], platform)
     ensure_herdr_core(platform)
