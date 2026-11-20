@@ -94,7 +94,8 @@ The pane is read-only and refreshes when an agent or editor saves the file. Use 
 
 ## Local preferences
 
-- Set `DOTFILES_THEME=solarized-light` for the light prompt; dark is the default.
+- Set `DOTFILES_THEME=solarized-light` for the light prompt and command-line highlighting in zsh and PowerShell; dark is the default. Select the matching Solarized background in your terminal separately.
+- Both shells use `home/dot_config/dotfiles/solarized.conf`. In zsh, interactive `#` comments are enabled when highlighting loads.
 - `wezwk [directory]` opens a workspace in the current WezTerm window.
 - Private shell overrides belong in `~/.config/dotfiles/local.zprofile`, `local.zshrc`, or `local.ps1`.
 - Credentials and authentication state stay outside this repo.

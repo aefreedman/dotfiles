@@ -4,6 +4,7 @@ $themePath = Join-Path $HOME ".config/oh-my-posh/$theme.omp.json"
 if (-not (Test-Path -LiteralPath $themePath)) { throw 'dotfiles: required Oh My Posh theme is missing' }
 if (-not (Get-Command oh-my-posh -ErrorAction SilentlyContinue)) { throw 'dotfiles: oh-my-posh is missing; run the explicit bootstrap' }
 oh-my-posh init pwsh --config $themePath | Invoke-Expression
+& (Join-Path $PSScriptRoot 'solarized.ps1') -Theme $theme
 
 function wezwk {
     param([string]$Path = (Get-Location).Path)

@@ -28,3 +28,48 @@ wezwk() {
 if [[ -f "$HOME/.config/dotfiles/local.zshrc" ]]; then
   source "$HOME/.config/dotfiles/local.zshrc"
 fi
+
+# Load syntax highlighting after local widgets and plugins.
+if [[ -n "${HOMEBREW_PREFIX:-}" && -r "$HOME/.config/dotfiles/solarized.conf" ]]; then
+  _dotfiles_highlighter="$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+  if [[ -r "$_dotfiles_highlighter" ]] && source "$_dotfiles_highlighter"; then
+    () {
+      local -A palette
+      local key hex style role
+      local variant=dark
+      [[ "${DOTFILES_THEME:-}" == solarized-light ]] && variant=light
+      while IFS='=' read -r key hex; do
+        [[ -n "$key" && "$key" != \#* ]] && palette[$key]=$hex
+      done < "$HOME/.config/dotfiles/solarized.conf"
+      palette[foreground]=${palette[${variant}_foreground]}
+      palette[comment]=${palette[${variant}_comment]}
+      for role in foreground comment identifier statement literal parameter error; do
+        if [[ ! "${palette[$role]}" =~ '^[0-9a-fA-F]{6}$' ]]; then
+          print -u2 "dotfiles: invalid Solarized color for $role"
+          return 1
+        fi
+      done
+
+      for style in default path globbing; do
+        ZSH_HIGHLIGHT_STYLES[$style]="fg=#${palette[foreground]}"
+      done
+      for style in single-hyphen-option double-hyphen-option; do
+        ZSH_HIGHLIGHT_STYLES[$style]="fg=#${palette[parameter]}"
+      done
+      ZSH_HIGHLIGHT_STYLES[arg0]="fg=#${palette[identifier]}"
+      for style in dollar-double-quoted-argument history-expansion; do
+        ZSH_HIGHLIGHT_STYLES[$style]="fg=#${palette[identifier]}"
+      done
+      for style in reserved-word commandseparator redirection command-substitution-delimiter process-substitution-delimiter back-quoted-argument-delimiter; do
+        ZSH_HIGHLIGHT_STYLES[$style]="fg=#${palette[statement]}"
+      done
+      for style in single-quoted-argument double-quoted-argument dollar-quoted-argument rc-quote back-double-quoted-argument back-dollar-quoted-argument; do
+        ZSH_HIGHLIGHT_STYLES[$style]="fg=#${palette[literal]}"
+      done
+      ZSH_HIGHLIGHT_STYLES[comment]="fg=#${palette[comment]}"
+      ZSH_HIGHLIGHT_STYLES[unknown-token]="fg=#${palette[error]}"
+      setopt interactivecomments
+    }
+  fi
+  unset _dotfiles_highlighter
+fi
